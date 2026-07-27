@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Painel Recrutamento Compliance | Hapvida</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Hapvida | Compliance</p>
+          <h1>Painel do recrutamento</h1>
+        </div>
+      </header>
+
+      <section id="recruitingPanel" class="app-view active" data-view-panel="recruiting" aria-labelledby="recruitingTitle">
+        <section class="panel dashboard-hero">
+          <div>
+            <p class="eyebrow">Recrutamento executivo</p>
+            <h2 id="recruitingTitle">Acompanhamento dos formulários recebidos</h2>
+          </div>
+          <div class="dashboard-actions">
+            <button type="button" class="secondary-button" id="seedExampleButton">Adicionar exemplo</button>
+            <button type="button" class="secondary-button" id="clearSubmissionsButton">Limpar recebidos</button>
+          </div>
+        </section>
+
+        <section class="metrics-grid" aria-label="Indicadores do painel">
+          <article class="metric-card">
+            <span>Recebidos</span>
+            <strong id="metricTotal">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Com respostas Sim</span>
+            <strong id="metricWithYes">0</strong>
+          </article>
+          <article class="metric-card">
+            <span>Sem conflito declarado</span>
+            <strong id="metricNoConflict">0</strong>
+          </article>
+        </section>
+
+        <section class="panel recruiter-config" aria-labelledby="emailConfigTitle">
+          <div class="section-heading">
+            <h2 id="emailConfigTitle">E-mails dos recrutadores</h2>
+            <span id="emailConfigStatus" class="validation-summary" role="status"></span>
+          </div>
+          <label>
+            Destinatários do formulário preenchido
+            <textarea id="recruiterEmails" rows="3" placeholder="exemplo@hapvida.com.br; outro@hapvida.com.br"></textarea>
+          </label>
+          <div class="config-actions">
+            <button type="button" class="primary-button" id="saveEmailsButton">Salvar e-mails</button>
+          </div>
+        </section>
+
+        <section class="panel submissions-panel" aria-labelledby="submissionsTitle">
+          <div class="section-heading">
+            <h2 id="submissionsTitle">Formulários recebidos</h2>
+            <span id="submissionsHint" class="validation-summary"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Candidato</th>
+                  <th>Data de envio</th>
+                  <th>Respostas Sim</th>
+                  <th>Status</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="submissionsTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="submissionDialog" class="review-dialog">
+      <form method="dialog">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">Detalhe do formulário</p>
+            <h2 id="submissionDialogTitle">Respostas do candidato</h2>
+          </div>
+          <button class="icon-button" value="cancel" aria-label="Fechar detalhe">×</button>
+        </div>
+        <div id="submissionDetail" class="review-content"></div>
+        <div class="dialog-actions">
+          <button class="secondary-button" value="cancel">Fechar</button>
+          <button type="button" class="primary-button" id="emailSelectedButton">Enviar por e-mail</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>

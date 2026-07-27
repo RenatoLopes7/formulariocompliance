@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Formulário Compliance Executivo | Hapvida</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Hapvida | Compliance</p>
+          <h1>Formulário do candidato executivo</h1>
+        </div>
+        <div class="progress-card" aria-live="polite">
+          <span id="progressText">0 de 6 respondidas</span>
+          <div class="progress-track" aria-hidden="true">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+        </div>
+      </header>
+      <form id="complianceForm" class="app-view active" data-view-panel="candidate" novalidate>
+        <section class="panel candidate-panel" aria-labelledby="candidateTitle">
+          <div class="section-heading">
+            <h2 id="candidateTitle">Dados do candidato</h2>
+            <span class="required-note">Campos obrigatórios</span>
+          </div>
+          <div class="field-grid">
+            <label>
+              Nome completo
+              <input id="candidateName" name="candidateName" type="text" autocomplete="name" required />
+            </label>
+            <label>
+              CPF
+              <input id="candidateCpf" name="candidateCpf" type="text" inputmode="numeric" autocomplete="off" required />
+            </label>
+            <label>
+              Data
+              <input id="candidateDate" name="candidateDate" type="date" required />
+            </label>
+            <label>
+              Cargo pretendido
+              <input id="candidateRole" name="candidateRole" type="text" autocomplete="off" />
+            </label>
+          </div>
+        </section>
+        <section class="panel questions-panel" aria-labelledby="questionsTitle">
+          <div class="section-heading">
+            <h2 id="questionsTitle">Perguntas de compliance</h2>
+            <span id="validationSummary" class="validation-summary" role="status"></span>
+          </div>
+          <div id="questionsList" class="questions-list"></div>
+        </section>
+        <section class="panel declaration-panel" aria-labelledby="declarationTitle">
+          <h2 id="declarationTitle">Declaração</h2>
+          <label class="checkbox-row">
+            <input id="truthDeclaration" name="truthDeclaration" type="checkbox" required />
+            <span>Declaro que as respostas acima são verdadeiras.</span>
+          </label>
+        </section>
+        <section class="actions-bar" aria-label="Ações do formulário">
+          <button type="button" class="secondary-button" id="clearDraftButton">Limpar</button>
+          <button type="button" class="secondary-button" id="exportButton">Exportar respostas</button>
+          <button type="button" class="secondary-button" id="printButton">Imprimir</button>
+          <button type="submit" class="primary-button">Revisar envio</button>
+        </section>
+      </form>
+    </main>
+    <dialog id="reviewDialog" class="review-dialog">
+      <form method="dialog">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">Revisão final</p>
+            <h2>Conferência das respostas</h2>
+          </div>
+          <button class="icon-button" value="cancel" aria-label="Fechar revisão">×</button>
+        </div>
+        <div id="reviewContent" class="review-content"></div>
+        <div class="dialog-actions">
+          <button class="secondary-button" value="cancel">Voltar e editar</button>
+          <button class="primary-button" value="confirm" id="confirmButton">Confirmar e enviar</button>
+        </div>
+      </form>
+    </dialog>
+    <script src="app.js"></script>
+  </body>
+</html>
