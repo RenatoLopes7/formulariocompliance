@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Painel de Compliance | Hapvida</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .status-pill.pendente { background: #eef1f0; color: #5d6f70; }
+      .status-pill.aprovado { background: #e4f2e7; color: #1b6b2f; }
+      .status-pill.reprovado { background: #fdecea; color: #b42318; }
+      .decision-actions { display: flex; gap: 6px; margin-top: 8px; }
+      .btn-approve { border-color: #1b6b2f; color: #1b6b2f; }
+      .btn-approve:hover { background: #e4f2e7; border-color: #1b6b2f; }
+      .btn-reject { border-color: #b42318; color: #b42318; }
+      .btn-reject:hover { background: #fdecea; border-color: #b42318; }
+      .btn-del { border-color: #b42318; color: #b42318; }
+      .btn-del:hover { background: #b42318; color: #fff; border-color: #b42318; }
+      .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+      .search-input { max-width: 320px; }
+      table { min-width: 860px; }
+      .tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid #e4e9e7; }
+      .tab-btn { min-height: 40px; border: 0; border-bottom: 3px solid transparent; background: transparent; color: #5d6f70; font-weight: 700; padding: 0 14px; border-radius: 0; }
+      .tab-btn:hover { color: #064f49; }
+      .tab-btn.active { color: #064f49; border-bottom-color: #00857b; }
+      .tab-btn .tab-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: 6px; padding: 0 6px; border-radius: 999px; background: #eef1f0; color: #5d6f70; font-size: 0.72rem; }
+      .tab-btn.active .tab-count { background: #e7f2f0; color: #064f49; }
+      .visto-badge { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; color: #1b6b2f; font-size: 0.76rem; font-weight: 700; }
+      .visto-badge.nao { color: #9aa8a8; font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Hapvida | Compliance</p>
+          <h1>Painel do recrutamento</h1>
+        </div>
+        <div class="dashboard-actions" id="topActions" hidden>
+          <button type="button" class="secondary-button" id="newUserButton">Criar usuario</button>
+          <button type="button" class="secondary-button" id="reloadButton">Atualizar</button>
+          <button type="button" class="secondary-button" id="logoutButton">Sair</button>
+        </div>
+      </header>
+
+      <section class="panel" id="loginPanel" aria-labelledby="loginTitle">
+        <div class="section-heading">
+          <h2 id="loginTitle">Acesso restrito</h2>
+          <span id="loginStatus" class="validation-summary" role="status"></span>
+        </div>
+        <div class="field-grid">
+          <label>
+            E-mail
+            <input id="loginEmail" type="email" autocomplete="username" />
+          </label>
+          <label>
+            Senha
+            <input id="loginPassword" type="password" autocomplete="current-password" />
+          </label>
+        </div>
+        <div class="config-actions" style="margin-top:16px">
+          <button type="button" class="primary-button" id="loginButton">Entrar</button>
+        </div>
+      </section>
+
+      <section id="dashboard" hidden>
+        <section class="metrics-grid" aria-label="Indicadores">
+          <article class="metric-card"><span>Recebidos</span><strong id="metricTotal">0</strong></article>
+          <article class="metric-card"><span>Requer analise</span><strong id="metricWithYes">0</strong></article>
+          <article class="metric-card"><span>Aprovados</span><strong id="metricAprovados">0</strong></article>
+          <article class="metric-card"><span>Reprovados</span><strong id="metricReprovados">0</strong></article>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <h2>Formularios recebidos</h2>
+            <span id="submissionsHint" class="validation-summary"></span>
+          </div>
+          <div class="tabs" role="tablist">
+            <button type="button" class="tab-btn active" data-tab="analise">Em analise <span class="tab-count" id="countAnalise">0</span></button>
+            <button type="button" class="tab-btn" data-tab="avaliados">Avaliados <span class="tab-count" id="countAvaliados">0</span></button>
+          </div>
+          <label style="margin-bottom:16px">
+            Buscar por nome
+            <input id="searchInput" class="search-input" type="text" placeholder="Digite o nome do candidato..." />
+          </label>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Candidato</th>
+                  <th>Enviado em</th>
+                  <th>Sim</th>
+                  <th>Conflito</th>
+                  <th>Decisao</th>
+                  <th>Acoes</th>
+                </tr>
+              </thead>
+              <tbody id="submissionsTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="userDialog" class="review-dialog">
+      <form method="dialog">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">Acesso ao painel</p>
+            <h2>Criar usuario</h2>
+          </div>
+          <button class="icon-button" value="cancel" aria-label="Fechar">&times;</button>
+        </div>
+        <div class="review-content">
+          <div class="field-grid">
+            <label>
+              E-mail
+              <input id="newEmail" type="email" autocomplete="off" placeholder="nome@hapvida.com.br" />
+            </label>
+            <label>
+              Senha (minimo 6 caracteres)
+              <input id="newPassword" type="password" autocomplete="new-password" />
+            </label>
+          </div>
+          <p id="newUserStatus" class="validation-summary" style="margin-top:12px"></p>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-button" id="newUserClose">Cancelar</button>
+          <button type="button" class="primary-button" id="newUserCreate">Criar usuario</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="detailDialog" class="review-dialog">
+      <form method="dialog">
+        <div class="dialog-header">
+          <div>
+            <p class="eyebrow">Detalhe do envio</p>
+            <h2 id="detailTitle">Respostas do candidato</h2>
+          </div>
+          <button class="icon-button" value="cancel" aria-label="Fechar">&times;</button>
+        </div>
+        <div id="detailContent" class="review-content"></div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary-button" id="detailClose">Fechar</button>
+          <button type="button" class="primary-button" id="detailReject" style="background:#b42318">Reprovar analise</button>
+          <button type="button" class="primary-button" id="detailApprove" style="background:#1b6b2f">Aprovar analise</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script>
+      const SUPABASE_URL = "https://ibamaefclzhvszckpafc.supabase.co";
+      const SUPABASE_ANON_KEY = "sb_publishable_G2nGXTGgpla_mmaVZGLg_A_xNVdrW-o";
+      const TABLE = "compliance_submissions";
+
+      let accessToken = sessionStorage.getItem("sb_admin_token") || null;
+      let userEmail = sessionStorage.getItem("sb_admin_email") || "";
+      let cache = [];
+      let currentDetailId = null;
+      let currentTab = "analise";
+
+      function isAvaliado(x) {
+        return x.analise_status === "Aprovado" || x.analise_status === "Reprovado";
+      }
+
+      const el = (id) => document.getElementById(id);
+      const esc = (v) =>
+        String(v == null ? "" : v)
+          .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+
+      function fmtDate(value) {
+        try {
+          return new Intl.DateTimeFormat("pt-BR", {
+            day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit",
+          }).format(new Date(value));
+        } catch (e) { return value || "-"; }
+      }
+
+      function decisionClass(status) {
+        if (status === "Aprovado") return "aprovado";
+        if (status === "Reprovado") return "reprovado";
+        return "pendente";
+      }
+
+      function showDashboard(show) {
+        el("loginPanel").hidden = show;
+        el("dashboard").hidden = !show;
+        el("topActions").hidden = !show;
+      }
+
+      async function login() {
+        const email = el("loginEmail").value.trim();
+        const password = el("loginPassword").value;
+        el("loginStatus").textContent = "Entrando...";
+        el("loginStatus").classList.remove("error");
+        try {
+          const r = await fetch(SUPABASE_URL + "/auth/v1/token?grant_type=password", {
+            method: "POST",
+            headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email, password: password }),
+          });
+          if (!r.ok) throw new Error("invalid");
+          const data = await r.json();
+          accessToken = data.access_token;
+          userEmail = (data.user && data.user.email) ? data.user.email : email;
+          sessionStorage.setItem("sb_admin_token", accessToken);
+          sessionStorage.setItem("sb_admin_email", userEmail);
+          el("loginStatus").textContent = "";
+          el("loginPassword").value = "";
+          showDashboard(true);
+          loadSubmissions();
+        } catch (e) {
+          el("loginStatus").textContent = "Nao foi possivel entrar. Verifique e-mail e senha.";
+          el("loginStatus").classList.add("error");
+        }
+      }
+
+      function logout() {
+        accessToken = null;
+        userEmail = "";
+        sessionStorage.removeItem("sb_admin_token");
+        sessionStorage.removeItem("sb_admin_email");
+        showDashboard(false);
+      }
+
+      async function loadSubmissions() {
+        if (!accessToken) return;
+        el("submissionsHint").textContent = "Carregando...";
+        try {
+          const r = await fetch(
+            SUPABASE_URL + "/rest/v1/" + TABLE + "?select=*&order=created_at.desc",
+            { headers: { apikey: SUPABASE_ANON_KEY, Authorization: "Bearer " + accessToken } }
+          );
+          if (r.status === 401) { logout(); return; }
+          if (!r.ok) throw new Error("fail");
+          cache = await r.json();
+          updateMetrics();
+          applyFilter();
+        } catch (e) {
+          el("submissionsHint").textContent = "Erro ao carregar os envios.";
+        }
+      }
+
+      function updateMetrics() {
+        const total = cache.length;
+        const comSim = cache.filter(function (x) { return (x.respostas_sim || 0) > 0; }).length;
+        const aprov = cache.filter(function (x) { return x.analise_status === "Aprovado"; }).length;
+        const reprov = cache.filter(function (x) { return x.analise_status === "Reprovado"; }).length;
+        el("metricTotal").textContent = total;
+        el("metricWithYes").textContent = comSim;
+        el("metricAprovados").textContent = aprov;
+        el("metricReprovados").textContent = reprov;
+      }
+
+      function applyFilter() {
+        const q = el("searchInput").value.trim().toLowerCase();
+        el("countAnalise").textContent = cache.filter(function (x) { return !isAvaliado(x); }).length;
+        el("countAvaliados").textContent = cache.filter(isAvaliado).length;
+        let rows = cache.filter(function (x) {
+          return currentTab === "avaliados" ? isAvaliado(x) : !isAvaliado(x);
+        });
+        if (q) rows = rows.filter(function (x) { return String(x.nome || "").toLowerCase().indexOf(q) !== -1; });
+        renderTable(rows);
+      }
+
+      function renderTable(rows) {
+        el("submissionsHint").textContent =
+          cache.length === 0 ? "Nenhum envio ainda" : rows.length + " de " + cache.length + " envio(s)";
+
+        el("submissionsTable").innerHTML = rows.map(function (x) {
+          const atencao = (x.respostas_sim || 0) > 0;
+          const dec = x.analise_status || "Pendente";
+          const vistoHtml = '<span class="visto-badge">&#10003; Aberto em ' + esc(fmtDate(x.created_at)) + '</span>';
+          return '<tr>' +
+            '<td><strong>' + esc(x.nome || "Sem nome") + '</strong>' +
+            '<span>CPF: ' + esc(x.cpf || "-") + '</span>' + vistoHtml + '</td>' +
+            '<td>' + esc(fmtDate(x.created_at)) + '</td>' +
+            '<td>' + esc(x.respostas_sim == null ? 0 : x.respostas_sim) + '</td>' +
+            '<td><span class="status-pill ' + (atencao ? "attention" : "clear") + '">' + esc(x.status || "-") + '</span></td>' +
+            '<td>' +
+              '<span class="status-pill ' + decisionClass(dec) + '">' + esc(dec) + '</span>' +
+              '<div class="decision-actions">' +
+                '<button type="button" class="table-button btn-approve" data-approve="' + esc(x.id) + '">Aprovar</button>' +
+                '<button type="button" class="table-button btn-reject" data-reject="' + esc(x.id) + '">Reprovar</button>' +
+              '</div>' +
+            '</td>' +
+            '<td><div class="row-actions">' +
+              '<button type="button" class="table-button" data-view="' + esc(x.id) + '">Ver respostas</button>' +
+              '<button type="button" class="table-button btn-del" data-del="' + esc(x.id) + '">Excluir</button>' +
+            '</div></td>' +
+            '</tr>';
+        }).join("");
+      }
+
+      async function setDecision(id, status) {
+        if (!accessToken) return;
+        try {
+          const r = await fetch(SUPABASE_URL + "/rest/v1/" + TABLE + "?id=eq." + encodeURIComponent(id), {
+            method: "PATCH",
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: "Bearer " + accessToken,
+              "Content-Type": "application/json",
+              Prefer: "return=minimal",
+            },
+            body: JSON.stringify({
+              analise_status: status,
+              analisado_por: userEmail,
+              analisado_em: new Date().toISOString(),
+            }),
+          });
+          if (r.status === 401) { logout(); return; }
+          if (!r.ok) { alert("Nao foi possivel salvar a decisao."); return; }
+          const item = cache.find(function (c) { return c.id === id; });
+          if (item) {
+            item.analise_status = status;
+            item.analisado_por = userEmail;
+            item.analisado_em = new Date().toISOString();
+          }
+          updateMetrics();
+          applyFilter();
+        } catch (e) {
+          alert("Erro ao salvar a decisao.");
+        }
+      }
+
+      async function deleteSubmission(id) {
+        if (!accessToken) return;
+        const item = cache.find(function (c) { return c.id === id; });
+        const nome = item ? (item.nome || "este envio") : "este envio";
+        if (!confirm('Excluir definitivamente o envio de "' + nome + '"? Esta acao nao pode ser desfeita.')) return;
+        try {
+          const r = await fetch(SUPABASE_URL + "/rest/v1/" + TABLE + "?id=eq." + encodeURIComponent(id), {
+            method: "DELETE",
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: "Bearer " + accessToken,
+              Prefer: "return=minimal",
+            },
+          });
+          if (r.status === 401) { logout(); return; }
+          if (!r.ok) { alert("Nao foi possivel excluir."); return; }
+          cache = cache.filter(function (c) { return c.id !== id; });
+          updateMetrics();
+          applyFilter();
+        } catch (e) {
+          alert("Erro ao excluir.");
+        }
+      }
+
+      async function markViewed(id) {
+        const item = cache.find(function (c) { return c.id === id; });
+        if (!item || item.visto_em) return;
+        const nowIso = new Date().toISOString();
+        item.visto_em = nowIso;
+        item.visto_por = userEmail;
+        applyFilter();
+        try {
+          await fetch(SUPABASE_URL + "/rest/v1/" + TABLE + "?id=eq." + encodeURIComponent(id), {
+            method: "PATCH",
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: "Bearer " + accessToken,
+              "Content-Type": "application/json",
+              Prefer: "return=minimal",
+            },
+            body: JSON.stringify({ visto_em: nowIso, visto_por: userEmail }),
+          });
+        } catch (e) { /* silencioso: se a coluna ainda nao existir, apenas nao persiste */ }
+      }
+
+      async function createUser() {
+        const email = el("newEmail").value.trim();
+        const password = el("newPassword").value;
+        const st = el("newUserStatus");
+        st.classList.remove("error");
+        if (!email || password.length < 6) {
+          st.textContent = "Informe um e-mail valido e uma senha de pelo menos 6 caracteres.";
+          st.classList.add("error");
+          return;
+        }
+        st.textContent = "Criando...";
+        try {
+          const r = await fetch(SUPABASE_URL + "/auth/v1/signup", {
+            method: "POST",
+            headers: { apikey: SUPABASE_ANON_KEY, "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email, password: password }),
+          });
+          const data = await r.json().catch(function () { return {}; });
+          if (!r.ok) {
+            st.textContent = (data && (data.msg || data.error_description || data.error)) || "Nao foi possivel criar o usuario.";
+            st.classList.add("error");
+            return;
+          }
+          el("newEmail").value = "";
+          el("newPassword").value = "";
+          const precisaConfirmar = data && data.user && !data.session;
+          st.classList.remove("error");
+          st.textContent = precisaConfirmar
+            ? "Usuario criado. Se a confirmacao de e-mail estiver ativa no Supabase, ele precisa confirmar o e-mail antes de entrar."
+            : "Usuario criado com sucesso. Ja pode fazer login.";
+        } catch (e) {
+          st.textContent = "Erro ao criar o usuario.";
+          st.classList.add("error");
+        }
+      }
+
+      function openDetail(id) {
+        const x = cache.find(function (c) { return c.id === id; });
+        if (!x) return;
+        currentDetailId = id;
+        el("detailTitle").textContent = x.nome || "Respostas do candidato";
+        const respostas = Array.isArray(x.respostas) ? x.respostas : [];
+        const analisadoLinha = x.analisado_por
+          ? '<p><strong>Analisado por:</strong> ' + esc(x.analisado_por) + ' em ' + esc(fmtDate(x.analisado_em)) + '</p>'
+          : '';
+        const vistoLinha = '<p><strong>Aberto pelo candidato em:</strong> ' + esc(fmtDate(x.created_at)) + '</p>';
+        el("detailContent").innerHTML =
+          '<div class="review-block">' +
+            '<h3>Dados do candidato</h3>' +
+            '<p><strong>Nome:</strong> ' + esc(x.nome) + '</p>' +
+            '<p><strong>CPF:</strong> ' + esc(x.cpf) + '</p>' +
+            '<p><strong>Data de preenchimento:</strong> ' + esc(x.data_informada || "-") + '</p>' +
+            '<p><strong>Enviado em:</strong> ' + esc(fmtDate(x.created_at)) + '</p>' +
+            '<p><strong>Decisao:</strong> ' + esc(x.analise_status || "Pendente") + '</p>' +
+            analisadoLinha +
+            vistoLinha +
+          '</div>' +
+          respostas.map(function (item) {
+            return '<div class="review-block">' +
+              '<h3>Pergunta ' + esc(item.pergunta) + ': ' + esc(item.resposta) + '</h3>' +
+              '<p>' + esc(item.texto) + '</p>' +
+              (item.justificativa ? '<p><strong>Justificativa:</strong> ' + esc(item.justificativa) + '</p>' : '') +
+            '</div>';
+          }).join("");
+        el("detailDialog").showModal();
+      }
+
+      el("loginButton").addEventListener("click", login);
+      el("loginPassword").addEventListener("keydown", function (e) { if (e.key === "Enter") login(); });
+      el("logoutButton").addEventListener("click", logout);
+      el("reloadButton").addEventListener("click", loadSubmissions);
+      el("newUserButton").addEventListener("click", function () {
+        el("newUserStatus").textContent = "";
+        el("newUserStatus").classList.remove("error");
+        el("newEmail").value = "";
+        el("newPassword").value = "";
+        el("userDialog").showModal();
+      });
+      el("newUserClose").addEventListener("click", function () { el("userDialog").close(); });
+      el("newUserCreate").addEventListener("click", createUser);
+      el("searchInput").addEventListener("input", applyFilter);
+      document.querySelectorAll(".tab-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          document.querySelectorAll(".tab-btn").forEach(function (b) { b.classList.remove("active"); });
+          btn.classList.add("active");
+          currentTab = btn.dataset.tab;
+          applyFilter();
+        });
+      });
+      el("submissionsTable").addEventListener("click", function (e) {
+        const view = e.target.closest("[data-view]");
+        if (view) { openDetail(view.dataset.view); return; }
+        const ap = e.target.closest("[data-approve]");
+        if (ap) { setDecision(ap.dataset.approve, "Aprovado"); return; }
+        const rp = e.target.closest("[data-reject]");
+        if (rp) { setDecision(rp.dataset.reject, "Reprovado"); return; }
+        const del = e.target.closest("[data-del]");
+        if (del) { deleteSubmission(del.dataset.del); return; }
+      });
+
+      el("detailClose").addEventListener("click", function () { el("detailDialog").close(); });
+      el("detailApprove").addEventListener("click", function () {
+        if (currentDetailId) setDecision(currentDetailId, "Aprovado");
+        el("detailDialog").close();
+      });
+      el("detailReject").addEventListener("click", function () {
+        if (currentDetailId) setDecision(currentDetailId, "Reprovado");
+        el("detailDialog").close();
+      });
+
+      if (accessToken) { showDashboard(true); loadSubmissions(); }
+    </script>
+  </body>
+</html>
